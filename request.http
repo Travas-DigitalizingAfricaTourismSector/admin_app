@@ -1,0 +1,10 @@
+POST http://localhost:8080/register
+Content-Type: application/x-www-form-urlencoded
+
+company_name=Akinleye&email=yusuf0071@gmail.com&password=Akinleye123&confirm_password=Akinleye123
+
+###
+POST http://localhost:8080/login
+Content-Type: application/x-www-form-urlencoded
+
+email=yusuf007@gmail.com&password=Akinleye123
