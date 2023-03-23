@@ -26,6 +26,11 @@ func Routes(r *gin.Engine, o controller.Admin) {
 	authRouter := r.Group("/admin")
 	// authRouter.Use(Authorization())
 	{
+
+		// dasahboard lists
+		authRouter.GET("/dashboard/operators", o.ListDashBoardOperators())
+		authRouter.GET("/dashboard/tourists", o.FindAllDashboardTourists())
+
 		// operators
 		authRouter.GET("/operators", o.ListOperators())
 

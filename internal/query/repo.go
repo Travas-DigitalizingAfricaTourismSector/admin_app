@@ -11,6 +11,7 @@ type Repo interface {
 	VerifyUser(email string) (primitive.M, error)
 	UpdateInfo(userID primitive.ObjectID, tk map[string]string) (bool, error)
 	ListOperators() (*model.ListResult, error)
+	ListDashBoardOperators() ([]model.DashBoardOperator, error)
 
 	// tours
 	// InsertPackage(tour *model.Tour) (bool, error)
@@ -30,6 +31,7 @@ type Repo interface {
 
 	// tourists
 	FindAllTourists() ([]model.Tourist, error)
+	FindAllDashboardTourists() ([]model.DashBoardTourist, error)
 	SumAllBookings() (*int, error)
 	SumAllRequestedTours() (*int, error)
 }

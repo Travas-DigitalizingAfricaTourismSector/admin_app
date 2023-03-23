@@ -378,3 +378,18 @@ func (op *Admin) ListOperators() gin.HandlerFunc {
 		ctx.JSONP(http.StatusOK, gin.H{"operators": list})
 	}
 }
+
+func (op *Admin) ListDashBoardOperators() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// Todo -> get all the tour request from the tourists collections
+		//	and compare and check for the date with the present date
+
+		list, err := op.DB.ListDashBoardOperators()
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"operators": list, "total": len(list)})
+	}
+}

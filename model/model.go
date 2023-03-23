@@ -22,6 +22,19 @@ type Operator struct {
 	UpdatedAt       time.Time          `bson:"updated_at" Usage:"datetime" json:"updated_at"`
 }
 
+type DashBoardOperator struct {
+	ID          primitive.ObjectID `bson:"_id" json:"_id"`
+	CompanyName string             `bson:"company_name,omitempty"`
+	Email       string             `bson:"email" Usage:"required,alphanumeric" json:"email,omitempty"`
+}
+
+type DashBoardTourist struct {
+	ID        primitive.ObjectID `bson:"_id"`
+	FirstName string             `bson:"first_name" Usage:"required,alpha,omitempty"`
+	LastName  string             `bson:"last_name" Usage:"required,alpha,omitempty"`
+	Email     string             `bson:"email" Usage:"required,alphanumeric"`
+}
+
 type TourGuide struct {
 	OperatorID primitive.ObjectID `bson:"operator_id" json:"operator_id,omitempty"`
 	ID         string             `bson:"_id" json:"_id"`

@@ -166,3 +166,30 @@ func (op *AdminDB) ListOperators() (*model.ListResult, error) {
 	}
 	return response, nil
 }
+
+func (op *AdminDB) ListDashBoardOperators() ([]model.DashBoardOperator, error) {
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
+
+	dataCollection := OperatorData(op.DB, "operators")
+
+	filter := bson.M{}
+
+	cur, err := dataCollection.Find(ctx, filter)
+	defer cur.Close(context.TODO())
+
+	if err != nil {
+		op.App.ErrorLogger.Fatal(err)
+		return nil, err
+	}
+
+	var operatorList []model.DashBoardOperator
+
+	if err = cur.All(context.TODO(), &operatorList); err != nil {
+		op.App.ErrorLogger.Fatal(err)
+		return nil, err
+	}
+
+	return operatorList, nil
+}
