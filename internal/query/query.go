@@ -3,6 +3,7 @@ package query
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"time"
 
@@ -65,7 +66,7 @@ func (op *AdminDB) VerifyUser(email string) (primitive.M, error) {
 	var res bson.M
 
 	filter := bson.D{{Key: "email", Value: email}}
-	err := OperatorData(op.DB, "operators").FindOne(ctx, filter).Decode(&res)
+	err := TouristsData(op.DB, "tourists").FindOne(ctx, filter).Decode(&res)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			op.App.ErrorLogger.Println("no document found for this query")
@@ -136,14 +137,31 @@ func (op *AdminDB) ValidTourRequest() ([]primitive.M, error) {
 	return validReq, nil
 }
 
-func (op *AdminDB) ListOperators() (*model.ListResult, error) {
+func (op *AdminDB) ListOperators(page, limit int64, name string) (*model.ListResult, error) {
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
 	defer cancel()
 
 	dataCollection := OperatorData(op.DB, "operators")
 
-	filter := bson.M{}
+	var filter interface{}
+	if name != "" {
+		filter = bson.M{}
+
+	} else {
+
+		filter = bson.M{}
+	}
+
+	countChannel := make(chan int64)
+
+	go func() {
+		count, err := dataCollection.CountDocuments(context.TODO(), filter)
+		if err != nil {
+			panic(err)
+		}
+		countChannel <- count
+	}()
 
 	cur, err := dataCollection.Find(ctx, filter)
 	defer cur.Close(context.TODO())
@@ -160,11 +178,12 @@ func (op *AdminDB) ListOperators() (*model.ListResult, error) {
 		return nil, err
 	}
 
-	response := &model.ListResult{
+	data := &model.ListResult{
 		Rows:  operatorList,
-		Total: len(operatorList),
+		Total: <-countChannel,
+		Page:  page,
 	}
-	return response, nil
+	return data, nil
 }
 
 func (op *AdminDB) ListDashBoardOperators() ([]model.DashBoardOperator, error) {
@@ -192,4 +211,63 @@ func (op *AdminDB) ListDashBoardOperators() ([]model.DashBoardOperator, error) {
 	}
 
 	return operatorList, nil
+}
+
+func (op *AdminDB) GetReviews() (interface{}, error) {
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
+
+	// tours
+	// tourGuide
+	// operatorLiscence
+
+	tourCollection := OperatorData(op.DB, "tours")
+	tourChannel := make(chan int, 0)
+
+	tourGuideCollection := OperatorData(op.DB, "tour_guide")
+	tourGuideChannel := make(chan int, 0)
+
+	// operatorCollection := OperatorData(op.DB, "operators")
+
+	// filter := bson.M{}
+	// tourFilter := bson.D{{Key: "isApproved", Value: false}}
+
+	tourFilter := bson.M{"isApproved": false}
+	go func() {
+
+		cur, err := tourCollection.Find(ctx, tourFilter)
+
+		var tourList []model.Tour
+
+		if err = cur.All(context.TODO(), &tourList); err != nil {
+			op.App.ErrorLogger.Fatal(err)
+			// return nil, err
+		}
+
+		fmt.Println("TOURS: ", len(tourList))
+		tourChannel <- len(tourList)
+	}()
+
+	go func() {
+
+		cur, err := tourGuideCollection.Find(ctx, tourFilter)
+
+		var tourList []model.Tour
+
+		if err = cur.All(context.TODO(), &tourList); err != nil {
+			op.App.ErrorLogger.Fatal(err)
+			// return nil, err
+		}
+
+		fmt.Println("TOURGUIDES: ", len(tourList))
+		tourGuideChannel <- len(tourList)
+
+	}()
+
+	response := map[string]interface{}{
+		"tours":       <-tourChannel,
+		"toursGuides": <-tourGuideChannel,
+	}
+	return response, nil
 }

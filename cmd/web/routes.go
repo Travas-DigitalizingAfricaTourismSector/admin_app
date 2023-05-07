@@ -18,17 +18,24 @@ func Routes(r *gin.Engine, o controller.Admin) {
 	cookieData := cookie.NewStore([]byte("travas"))
 	router.Use(sessions.Sessions("session", cookieData))
 
-	router.GET("/", o.Welcome())
-	router.GET("/register", o.Register())
-	router.POST("/register", o.ProcessRegister())
-	router.GET("/login", o.LoginPage())
+	// router.GET("/", o.Welcome())
+	// router.GET("/register", o.Register())
+	// router.POST("/register", o.ProcessRegister())
+	// router.GET("/login", o.LoginPage())
 	router.POST("/login", o.ProcessLogin())
 	authRouter := r.Group("/admin")
 	// authRouter.Use(Authorization())
+
 	{
 
+		// TODO
+		// GET Reviews
+		// APPROVE TOURPACKAGE
+		// APPROVE IDENTITY
+		// APPROVE TOUR GUIDE
+
 		// dasahboard lists
-		authRouter.GET("/dashboard/operators", o.ListDashBoardOperators())
+		// authRouter.GET("/dashboard/operators", o.ListDashBoardOperators())
 		authRouter.GET("/dashboard/tourists", o.FindAllDashboardTourists())
 
 		// operators
@@ -53,6 +60,17 @@ func Routes(r *gin.Engine, o controller.Admin) {
 		authRouter.GET("/sum_packages", o.SumTourPackages())
 		authRouter.GET("/sum_bookings", o.GetBookingsSum())
 		authRouter.GET("/sum_requested_tours", o.GetRequestedTourSum())
+
+		authRouter.GET("/reviews", o.ProcessReviews())
+		authRouter.GET("/reviews/packages", o.ListToursPackagesToReview())
+		authRouter.GET("/reviews/tour_guides", o.ListTourGuidesToReview())
+		authRouter.PATCH("/reviews/packages/:packageID", o.ApproveDeclineTourPackage())
+		authRouter.PATCH("/reviews/tour_guides/:tourGuideID", o.ApproveDeclineTourGuide())
+
+		// review
+		// listReview
+		// listTourPacakages to review
+		// listTourGuides to review
 
 	}
 }

@@ -2,19 +2,31 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"travas_admin/model"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (op *AdminDB) ListTourPackages() (*model.ListResult, error) {
+func (op *AdminDB) ListTourPackages(reqData map[string]interface{}) (*model.ListResult, error) {
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
 	defer cancel()
 
+	dataValue, ok := reqData["isApproved"].(bool)
+	fmt.Println("dataValue::: ", dataValue, ok)
 	filter := bson.M{}
+	if !ok {
+
+		filter = bson.M{}
+	} else {
+		filter = bson.M{
+			"isApproved": dataValue,
+		}
+	}
 
 	dataCollection := TourData(op.DB, "tours")
 
@@ -34,7 +46,7 @@ func (op *AdminDB) ListTourPackages() (*model.ListResult, error) {
 
 	data := &model.ListResult{
 		Rows:  tourList,
-		Total: len(tourList),
+		Total: int64(len(tourList)),
 	}
 	return data, nil
 }
@@ -81,9 +93,72 @@ func (op *AdminDB) ListOperatorPackages(operatorID string) (*model.ListResult, e
 
 	data := &model.ListResult{
 		Rows:  tourList,
-		Total: len(tourList),
+		Total: int64(len(tourList)),
 	}
 	return data, nil
+}
+
+func (op *AdminDB) ApproveDeclineTourPackage(tg *model.Tour) (string, error) {
+
+	var tour *model.Tour
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
+
+	dataCollection := TourData(op.DB, "tours")
+
+	filter := bson.M{"_id": tg.ID}
+
+	err := dataCollection.FindOne(ctx, filter).Decode(&tour)
+	if err != nil {
+		return "", err
+	}
+	var updates primitive.M
+
+	if !tg.IsApproved {
+
+		updates = bson.M{
+			"$set": bson.M{
+				"isApproved":    tg.IsApproved,
+				"declineReason": tg.DeclineReason,
+				"approvedBy":    tg.ApprovedBy,
+
+			},
+		}
+
+	} else {
+		updates = bson.M{
+			"$set": bson.M{
+				"isApproved": tg.IsApproved,
+				"approvedBy":    tg.ApprovedBy,
+
+			},
+		}
+	}
+
+	_, err = dataCollection.UpdateOne(context.TODO(), filter, updates)
+	if err != nil {
+		return "", err
+	}
+
+	return "successfully reviewed tour", nil
+}
+
+func (op *AdminDB) GetTour(tourID string) (*model.Tour, error) {
+
+	var tour *model.Tour
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
+
+	dataCollection := TourData(op.DB, "tours")
+
+	filter := bson.M{"_id": tourID}
+
+	err := dataCollection.FindOne(ctx, filter).Decode(&tour)
+	if err != nil {
+		return nil, fmt.Errorf("error finding tour %v: %v", tourID, err)
+	}
+
+	return tour, nil
 }
 
 type mongoPaginate struct {

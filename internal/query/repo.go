@@ -7,31 +7,35 @@ import (
 )
 
 type Repo interface {
-	InsertUser(user *model.Operator) (bool, int, error)
-	VerifyUser(email string) (primitive.M, error)
-	UpdateInfo(userID primitive.ObjectID, tk map[string]string) (bool, error)
-	ListOperators() (*model.ListResult, error)
+	ListOperators(page, limit int64, nameParams string) (*model.ListResult, error)
 	ListDashBoardOperators() ([]model.DashBoardOperator, error)
+	VerifyUser(email string) (primitive.M, error)
 
 	// tours
 	// InsertPackage(tour *model.Tour) (bool, error)
 	// LoadTour(tourID primitive.ObjectID) (primitive.M, error)
-	ListTourPackages() (*model.ListResult, error)
+	ListTourPackages(map[string]interface{}) (*model.ListResult, error)
 	SumTourPackages() (int64, error)
 	ListOperatorPackages(operatorID string) (*model.ListResult, error)
-
 	ValidTourRequest() ([]primitive.M, error)
+	ApproveDeclineTourPackage(tour *model.Tour) (string, error)
+	GetTour(tourID string) (*model.Tour, error)
 
 	// tourGuide
 	InsertTourGuide(tg *model.TourGuide) (bool, error)
 	FindTourGuide(operatorID primitive.ObjectID) ([]primitive.M, error)
 	UpdateTourGuide(guideID string) error
-	ListTourGuides() (*model.ListResult, error)
+	ListTourGuides(map[string]interface{}) (*model.ListResult, error)
+	GetTourGuide(tourGuideID string) (*model.TourGuide, error)
 	ListTourGuidesByOperator(operatorID string) (*model.ListResult, error)
+	ApproveDeclineTourGuide(guide *model.TourGuide) (string, error)
 
 	// tourists
-	FindAllTourists() ([]model.Tourist, error)
+	FindAllTourists(page, limit int64, nameParams string) (*model.ListResult, error)
 	FindAllDashboardTourists() ([]model.DashBoardTourist, error)
 	SumAllBookings() (*int, error)
 	SumAllRequestedTours() (*int, error)
+
+	// review
+	GetReviews() (interface{}, error)
 }

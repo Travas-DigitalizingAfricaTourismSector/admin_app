@@ -2,7 +2,6 @@ package model
 
 import (
 	"time"
-
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -36,10 +35,13 @@ type DashBoardTourist struct {
 }
 
 type TourGuide struct {
-	OperatorID primitive.ObjectID `bson:"operator_id" json:"operator_id,omitempty"`
-	ID         string             `bson:"_id" json:"_id"`
-	Name       string             `bson:"name" json:"name"`
-	Bio        string             `bson:"bio" json:"bio"`
+	OperatorID    primitive.ObjectID `bson:"operator_id" json:"operator_id,omitempty"`
+	ID            string             `bson:"_id" json:"_id"`
+	Name          string             `bson:"name" json:"name"`
+	Bio           string             `bson:"bio" json:"bio"`
+	IsApproved    bool               `bson:"isApproved" json:"isApproved"`
+	DeclineReason string             `bson:"declineReason" json:"declineReason"`
+	ApprovedBy    string             `bson:"approvedBy" json:"approvedBy"`
 }
 
 type Tour struct {
@@ -61,13 +63,16 @@ type Tour struct {
 	Rules           map[string]string  `bson:"rules" json:"rules"`
 	CreatedAt       time.Time          `bson:"created_at" Usage:"datetime" json:"created_at"`
 	UpdatedAt       time.Time          `bson:"updated_at" Usage:"datetime" json:"updated_at"`
+	IsApproved      bool               `bson:"isApproved" json:"isApproved"`
+	ApprovedBy      string             `bson:"approvedBy" json:"approvedBy"`
+	DeclineReason   string             `bson:"declineReason" json:"declineReason"`
 }
 
 type UserInfo struct {
-	ID          primitive.ObjectID
-	Email       string
-	Password    string
-	CompanyName string
+	ID       primitive.ObjectID
+	Email    string
+	Password string
+	// CompanyName string
 }
 
 type Tourist struct {
@@ -89,5 +94,7 @@ type Tourist struct {
 
 type ListResult struct {
 	Rows  interface{} `json:"rows"`
-	Total int         `json:"total"`
+	Total int64       `json:"total"`
+	Page  int64       `json:"page"`
+	Limit int64       `json:"limit"`
 }

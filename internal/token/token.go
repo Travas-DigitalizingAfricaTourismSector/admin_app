@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type OperatorClaims struct {
+type AdminClaims struct {
 	jwt.RegisteredClaims
 	Email string
 	ID    primitive.ObjectID
@@ -19,7 +19,7 @@ type OperatorClaims struct {
 var secretKey = os.Getenv("TRAVAS_KEY")
 
 func Generate(email string, id primitive.ObjectID) (string, string, error) {
-	travasClaims := OperatorClaims{
+	travasClaims := AdminClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:   "travasAdmin",
 			IssuedAt: jwt.NewNumericDate(time.Now()),
@@ -48,14 +48,14 @@ func Generate(email string, id primitive.ObjectID) (string, string, error) {
 	return travasToken, refTravasToken, nil
 }
 
-func Parse(tokenString string) (*OperatorClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &OperatorClaims{}, func(t *jwt.Token) (interface{}, error) {
+func Parse(tokenString string) (*AdminClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &AdminClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(secretKey), nil
 	})
 	if err != nil {
 		log.Fatalf("error while parsing token with it claims %v", err)
 	}
-	claims, ok := token.Claims.(*OperatorClaims)
+	claims, ok := token.Claims.(*AdminClaims)
 	if !ok {
 		log.Fatalf("error %v controller not authorized access", http.StatusUnauthorized)
 	}

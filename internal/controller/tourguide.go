@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -38,6 +39,7 @@ func (op *Admin) AddTourGuide() gin.HandlerFunc {
 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
 		}
 		ctx.JSONP(http.StatusOK, gin.H{"message": "New tour guide added"})
+
 	}
 }
 
@@ -87,8 +89,16 @@ func (op *Admin) ListTourGuides() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		//	Todo -> make enquire from the frontend dev before coding this up
 		// find the right selected guide and add that to the tour packages as well
+		cookieData := sessions.Default(ctx)
+		fmt.Println("cookieData: ", cookieData)
+		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
-		list, err := op.DB.ListTourGuides()
+		if !ok {
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+		}
+		fmt.Println("userInfo, ok: ", userInfo, ok)
+
+		list, err := op.DB.ListTourGuides(nil)
 		if err != nil {
 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
 			return
@@ -110,5 +120,76 @@ func (op *Admin) ListOperatorTourGuides() gin.HandlerFunc {
 
 		}
 		ctx.JSONP(http.StatusOK, gin.H{"TourGuides": list})
+	}
+}
+
+func (op *Admin) ListTourGuidesToReview() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		reviewFilter := map[string]interface{}{
+			"isApproved":    false,
+			"declineReason": "",
+		}
+
+		list, err := op.DB.ListTourGuides(reviewFilter)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"TourGuides": list})
+	}
+}
+
+func (op *Admin) ApproveDeclineTourGuide() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		cookieData := sessions.Default(ctx)
+		fmt.Println("cookieData: ", cookieData)
+		userInfo, ok := cookieData.Get("info").(model.UserInfo)
+
+		if !ok {
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+		}
+		fmt.Println("userInfo, ok: ", userInfo, ok)
+
+		tourID := ctx.Param("tourGuideID")
+
+		var input model.TourGuide
+		if err := ctx.BindJSON(&input); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if !input.IsApproved && input.DeclineReason == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "DeclineReason is required but empty."})
+			return
+		}
+
+		// guide, err := op.DB.GetTourGuide(tourID)
+		_, err := op.DB.GetTourGuide(tourID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error finding tourGuide: %v", err)})
+			return
+		}
+
+		if guide.IsApproved == true {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "tourGuide already approved."})
+			return
+		}
+
+		data := &model.TourGuide{
+			ID:            tourID,
+			IsApproved:    input.IsApproved,
+			DeclineReason: input.DeclineReason,
+			ApprovedBy:    userInfo.Email,
+		}
+
+		resp, err := op.DB.ApproveDeclineTourGuide(data)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"data": resp})
 	}
 }

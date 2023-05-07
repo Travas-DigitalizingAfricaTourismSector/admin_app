@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"travas_admin/internal/token"
-
 	"github.com/gin-contrib/sessions"
+
+	"travas_admin/internal/token"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -16,13 +16,16 @@ func Authorization() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookieData := sessions.Default(ctx)
 
-		// fmt.Println("cookieData:", cookieData)
+		fmt.Println("COOKIE DATA:", cookieData)
+		// tokenString := cookieData.Get("token").(string)
 		tokenString := cookieData.Get("token").(string)
 		fmt.Println("tokenString:", tokenString)
+
 		if tokenString == "" {
 			_ = ctx.AbortWithError(http.StatusNoContent, errors.New("no value for token"))
 			return
 		}
+
 		// fmt.Println(tokenString)
 
 		parse, err := token.Parse(tokenString)

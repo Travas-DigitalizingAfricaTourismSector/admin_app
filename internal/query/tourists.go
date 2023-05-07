@@ -5,23 +5,50 @@ import (
 	"fmt"
 	"time"
 	"travas_admin/model"
+
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (td *AdminDB) FindAllTourists() (tourists []model.Tourist, err error) {
+func (td *AdminDB) FindAllTourists(page, limit int64, name string) (*model.ListResult, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	cursor, err := TouristsData(td.DB, "tourists").Find(ctx, bson.D{{}})
+	dataCollection := TouristsData(td.DB, "tourists")
+	countChannel := make(chan int64)
+
+	var filter interface{}
+	if name != "" {
+		filter = bson.M{}
+
+	} else {
+
+		filter = bson.M{}
+	}
+	go func() {
+		count, err := dataCollection.CountDocuments(context.TODO(), filter)
+		if err != nil {
+			panic(err)
+		}
+		countChannel <- count
+	}()
+
+	tourists := []model.Tourist{}
+	cursor, err := dataCollection.Find(context.TODO(), filter, NewMongoPaginate(limit, page).GetPaginatedOpts())
+
 	if err != nil {
-		return tourists, fmt.Errorf("cannot find document in the database %v ", err)
+		return nil, fmt.Errorf("cannot find document in the database %v ", err)
 	}
 
 	if err = cursor.All(ctx, &tourists); err != nil {
 		return nil, err
 	}
 
-	return tourists, err
+	data := &model.ListResult{
+		Rows:  tourists,
+		Total: <-countChannel,
+		Page:  page,
+	}
+	return data, err
 }
 
 func (td *AdminDB) FindAllDashboardTourists() (tourists []model.DashBoardTourist, err error) {

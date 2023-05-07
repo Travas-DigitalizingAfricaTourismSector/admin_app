@@ -2,6 +2,7 @@ package query
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -73,14 +74,23 @@ func (op *AdminDB) UpdateTourGuide(guideID string) error {
 	return nil
 }
 
-func (op *AdminDB) ListTourGuides() (*model.ListResult, error) {
+func (op *AdminDB) ListTourGuides(requestData map[string]interface{}) (*model.ListResult, error) {
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
 	defer cancel()
 
-	dataCollection := TourGuideData(op.DB, "tour_guide")
-
+	dataValue, ok := requestData["isApproved"].(bool)
 	filter := bson.M{}
+
+	if !ok {
+
+		filter = bson.M{}
+	} else {
+		filter = bson.M{
+			"isApproved": dataValue,
+		}
+	}
+	dataCollection := TourGuideData(op.DB, "tour_guide")
 
 	cur, err := dataCollection.Find(ctx, filter)
 	defer cur.Close(context.TODO())
@@ -99,7 +109,7 @@ func (op *AdminDB) ListTourGuides() (*model.ListResult, error) {
 
 	response := &model.ListResult{
 		Rows:  tourGuideList,
-		Total: len(tourGuideList),
+		Total: int64(len(tourGuideList)),
 	}
 	return response, nil
 }
@@ -130,7 +140,60 @@ func (op *AdminDB) ListTourGuidesByOperator(operatorID string) (*model.ListResul
 
 	response := &model.ListResult{
 		Rows:  tourGuideList,
-		Total: len(tourGuideList),
+		Total: int64(len(tourGuideList)),
 	}
 	return response, nil
+}
+
+func (op *AdminDB) ApproveDeclineTourGuide(tg *model.TourGuide) (string, error) {
+
+	dataCollection := TourGuideData(op.DB, "tour_guide")
+
+	filter := bson.M{"_id": tg.ID}
+
+	var updates primitive.M
+
+	if !tg.IsApproved {
+
+		updates = bson.M{
+			"$set": bson.M{
+				"isApproved":    tg.IsApproved,
+				"declineReason": tg.DeclineReason,
+				"approvedBy":    tg.ApprovedBy,
+			},
+		}
+
+	} else {
+		updates = bson.M{
+			"$set": bson.M{
+				"isApproved": tg.IsApproved,
+				"approvedBy": tg.ApprovedBy,
+			},
+		}
+	}
+
+	_, err := dataCollection.UpdateOne(context.TODO(), filter, updates)
+	if err != nil {
+		return "", err
+	}
+
+	return "successfully reviewed tourguide", nil
+}
+
+func (op *AdminDB) GetTourGuide(tourGuideID string) (*model.TourGuide, error) {
+
+	var tourGuide *model.TourGuide
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
+
+	dataCollection := TourGuideData(op.DB, "tour_guide")
+
+	filter := bson.M{"_id": tourGuideID}
+
+	err := dataCollection.FindOne(ctx, filter).Decode(&tourGuide)
+	if err != nil {
+		return nil, fmt.Errorf("error finding tourGuide %v: %v", tourGuideID, err)
+	}
+
+	return tourGuide, nil
 }
