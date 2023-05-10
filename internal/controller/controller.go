@@ -160,3 +160,106 @@ func (op *Admin) ProcessReviews() gin.HandlerFunc {
 		ctx.JSONP(http.StatusOK, gin.H{"data": response})
 	}
 }
+
+func (op *Admin) ApproveDeclineOperator() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		cookieData := sessions.Default(ctx)
+		userInfo, ok := cookieData.Get("info").(model.UserInfo)
+
+		if !ok {
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
+		}
+		fmt.Println("userInfo, ok: ", userInfo, ok)
+
+		operatorID := ctx.Param("operatorID")
+
+		var input model.Operator
+		if err := ctx.BindJSON(&input); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		if !input.IsApproved && input.DeclineReason == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "DeclineReason is required but empty."})
+			return
+		}
+
+		guide, err := op.DB.GetOperator(operatorID)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error finding operator: %v", err)})
+			return
+		}
+
+		if guide.IsApproved {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "operator already approved."})
+			return
+		}
+
+		id, _ := primitive.ObjectIDFromHex(operatorID)
+
+		data := &model.Operator{
+			ID:            id,
+			IsApproved:    input.IsApproved,
+			DeclineReason: input.DeclineReason,
+			ApprovedBy:    userInfo.Email,
+		}
+
+		resp, err := op.DB.ApproveDeclineOperator(data)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"data": resp})
+	}
+}
+
+func (op *Admin) VerifyDocument() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		operatorID := ctx.Param("operatorID")
+
+		idCard := map[string]interface{}{
+			"key": "url.jpg",
+		}
+
+		certificate := map[string]interface{}{
+			"key": "certificate.jpg",
+		}
+
+		data := &model.Operator{
+			IDCard:      idCard,
+			Certificate: certificate,
+		}
+
+		_, err := op.DB.UpdateOperator(operatorID, data)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+		}
+
+		//	todo --> verify document upload by the tour operator
+		//	this will involve scanning the pdf format of the document
+		//	signature and other details needed
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "completed ",
+		})
+	}
+}
+
+func (op *Admin) ListOperatorsToReview() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		reviewFilter := map[string]interface{}{
+			"isApproved":    false,
+			"declineReason": "",
+		}
+
+		list, err := op.DB.ListReviewingOperators(reviewFilter)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"TourOperators": list})
+	}
+}

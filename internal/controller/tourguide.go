@@ -24,7 +24,7 @@ func (op *Admin) AddTourGuide() gin.HandlerFunc {
 		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
 		if !ok {
-			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
 		}
 
 		tourGuide := &model.TourGuide{
@@ -49,7 +49,7 @@ func (op *Admin) GetTourGuide() gin.HandlerFunc {
 		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
 		if !ok {
-			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
 		}
 
 		arrRes, err := op.DB.FindTourGuide(userInfo.ID)
@@ -94,7 +94,7 @@ func (op *Admin) ListTourGuides() gin.HandlerFunc {
 		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
 		if !ok {
-			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
 		}
 		fmt.Println("userInfo, ok: ", userInfo, ok)
 
@@ -144,11 +144,10 @@ func (op *Admin) ListTourGuidesToReview() gin.HandlerFunc {
 func (op *Admin) ApproveDeclineTourGuide() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookieData := sessions.Default(ctx)
-		fmt.Println("cookieData: ", cookieData)
 		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
 		if !ok {
-			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
 		}
 		fmt.Println("userInfo, ok: ", userInfo, ok)
 
@@ -165,14 +164,13 @@ func (op *Admin) ApproveDeclineTourGuide() gin.HandlerFunc {
 			return
 		}
 
-		// guide, err := op.DB.GetTourGuide(tourID)
-		_, err := op.DB.GetTourGuide(tourID)
+		guide, err := op.DB.GetTourGuide(tourID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error finding tourGuide: %v", err)})
 			return
 		}
 
-		if guide.IsApproved == true {
+		if guide.IsApproved {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "tourGuide already approved."})
 			return
 		}

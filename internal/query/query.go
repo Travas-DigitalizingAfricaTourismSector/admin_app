@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	// "fmt"
 	"regexp"
 	"time"
 
@@ -78,18 +80,19 @@ func (op *AdminDB) VerifyUser(email string) (primitive.M, error) {
 	return res, nil
 }
 
-func (op *AdminDB) UpdateInfo(userID primitive.ObjectID, tk map[string]string) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
+func (op *AdminDB) UpdateOperator(operatorID string, tk *model.Operator) (*model.Operator, error) {
 
-	filter := bson.D{{Key: "_id", Value: userID}}
-	update := bson.D{{Key: "$set", Value: bson.D{{Key: "token", Value: tk["t1"]}, {Key: "new_token", Value: tk["t2"]}}}}
+	// ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	// defer cancel()
 
-	_, err := OperatorData(op.DB, "operators").UpdateOne(ctx, filter, update)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
+	// filter := bson.D{{Key: "_id", Value: userID}}
+	// update := bson.D{{Key: "$set", Value: bson.D{{Key: "token", Value: tk["t1"]}, {Key: "new_token", Value: tk["t2"]}}}}
+
+	// _, err := OperatorData(op.DB, "operators").UpdateOne(ctx, filter, update)
+	// if err != nil {
+	// 	return false, err
+	// }
+	return nil, nil
 }
 
 // ValidTourRequest This query below is to get all the valid tour requested by the tourist
@@ -228,6 +231,9 @@ func (op *AdminDB) GetReviews() (interface{}, error) {
 	tourGuideCollection := OperatorData(op.DB, "tour_guide")
 	tourGuideChannel := make(chan int, 0)
 
+	operatorCollection := OperatorData(op.DB, "operators")
+	operatorChannel := make(chan int, 0)
+
 	// operatorCollection := OperatorData(op.DB, "operators")
 
 	// filter := bson.M{}
@@ -245,7 +251,6 @@ func (op *AdminDB) GetReviews() (interface{}, error) {
 			// return nil, err
 		}
 
-		fmt.Println("TOURS: ", len(tourList))
 		tourChannel <- len(tourList)
 	}()
 
@@ -260,14 +265,122 @@ func (op *AdminDB) GetReviews() (interface{}, error) {
 			// return nil, err
 		}
 
-		fmt.Println("TOURGUIDES: ", len(tourList))
 		tourGuideChannel <- len(tourList)
+
+	}()
+	go func() {
+
+		cur, err := operatorCollection.Find(ctx, tourFilter)
+
+		var operatorList []model.Operator
+
+		if err = cur.All(context.TODO(), &operatorList); err != nil {
+			op.App.ErrorLogger.Fatal(err)
+			// return nil, err
+		}
+
+		operatorChannel <- len(operatorList)
 
 	}()
 
 	response := map[string]interface{}{
-		"tours":       <-tourChannel,
-		"toursGuides": <-tourGuideChannel,
+		"tours":          <-tourChannel,
+		"toursGuides":    <-tourGuideChannel,
+		"toursOperators": <-operatorChannel,
+	}
+	return response, nil
+}
+
+func (op *AdminDB) ApproveDeclineOperator(tg *model.Operator) (string, error) {
+
+	dataCollection := OperatorData(op.DB, "operators")
+
+	filter := bson.M{"_id": tg.ID}
+
+	var updates primitive.M
+
+	if !tg.IsApproved {
+
+		updates = bson.M{
+			"$set": bson.M{
+				"isApproved":    tg.IsApproved,
+				"declineReason": tg.DeclineReason,
+				"approvedBy":    tg.ApprovedBy,
+			},
+		}
+
+	} else {
+		updates = bson.M{
+			"$set": bson.M{
+				"isApproved": tg.IsApproved,
+				"approvedBy": tg.ApprovedBy,
+			},
+		}
+	}
+
+	_, err := dataCollection.UpdateOne(context.TODO(), filter, updates)
+	if err != nil {
+		return "", err
+	}
+
+	return "successfully reviewed tourguide", nil
+}
+
+func (op *AdminDB) GetOperator(operatorID string) (*model.Operator, error) {
+
+	var operator *model.Operator
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
+
+	dataCollection := OperatorData(op.DB, "operators")
+
+	filter := bson.M{"_id": operatorID}
+
+	err := dataCollection.FindOne(ctx, filter).Decode(&operator)
+	if err != nil {
+		return nil, fmt.Errorf("error finding operator %v: %v", operatorID, err)
+	}
+
+	return operator, nil
+}
+
+func (op *AdminDB) ListReviewingOperators(requestData map[string]interface{}) (*model.ListResult, error) {
+
+	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
+	defer cancel()
+
+	dataValue, ok := requestData["isApproved"].(bool)
+	filter := bson.M{}
+
+	if !ok {
+
+		filter = bson.M{}
+	} else {
+		filter = bson.M{
+			"isApproved": dataValue,
+		}
+	}
+	dataCollection := OperatorData(op.DB, "operators")
+
+	cur, err := dataCollection.Find(ctx, filter)
+
+	if err != nil {
+		op.App.ErrorLogger.Fatal(err)
+		return nil, err
+	}
+
+	defer cur.Close(context.TODO())
+
+	var operatorList []*model.Operator
+
+	if err = cur.All(context.TODO(), &operatorList); err != nil {
+		op.App.ErrorLogger.Fatal(err)
+		return nil, err
+	}
+
+	response := &model.ListResult{
+		Rows:  operatorList,
+		Total: int64(len(operatorList)),
 	}
 	return response, nil
 }

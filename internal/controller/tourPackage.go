@@ -82,7 +82,7 @@ func (op *Admin) ApproveDeclineTourPackage() gin.HandlerFunc {
 		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
 		if !ok {
-			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find operator id"))
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
 		}
 
 		packageID := ctx.Param("packageID")
@@ -106,7 +106,7 @@ func (op *Admin) ApproveDeclineTourPackage() gin.HandlerFunc {
 			return
 		}
 
-		if tourPackage.IsApproved == true {
+		if tourPackage.IsApproved {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "tour already approved"})
 			return
 		}

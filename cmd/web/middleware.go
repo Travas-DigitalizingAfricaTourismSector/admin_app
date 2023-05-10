@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -15,11 +14,7 @@ import (
 func Authorization() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		cookieData := sessions.Default(ctx)
-
-		fmt.Println("COOKIE DATA:", cookieData)
-		// tokenString := cookieData.Get("token").(string)
 		tokenString := cookieData.Get("token").(string)
-		fmt.Println("tokenString:", tokenString)
 
 		if tokenString == "" {
 			_ = ctx.AbortWithError(http.StatusNoContent, errors.New("no value for token"))

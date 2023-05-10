@@ -17,7 +17,7 @@ func (op *AdminDB) ListTourPackages(reqData map[string]interface{}) (*model.List
 	defer cancel()
 
 	dataValue, ok := reqData["isApproved"].(bool)
-	fmt.Println("dataValue::: ", dataValue, ok)
+
 	filter := bson.M{}
 	if !ok {
 
@@ -121,7 +121,6 @@ func (op *AdminDB) ApproveDeclineTourPackage(tg *model.Tour) (string, error) {
 				"isApproved":    tg.IsApproved,
 				"declineReason": tg.DeclineReason,
 				"approvedBy":    tg.ApprovedBy,
-
 			},
 		}
 
@@ -129,8 +128,7 @@ func (op *AdminDB) ApproveDeclineTourPackage(tg *model.Tour) (string, error) {
 		updates = bson.M{
 			"$set": bson.M{
 				"isApproved": tg.IsApproved,
-				"approvedBy":    tg.ApprovedBy,
-
+				"approvedBy": tg.ApprovedBy,
 			},
 		}
 	}

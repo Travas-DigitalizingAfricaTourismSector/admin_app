@@ -64,8 +64,10 @@ func Routes(r *gin.Engine, o controller.Admin) {
 		authRouter.GET("/reviews", o.ProcessReviews())
 		authRouter.GET("/reviews/packages", o.ListToursPackagesToReview())
 		authRouter.GET("/reviews/tour_guides", o.ListTourGuidesToReview())
+		authRouter.GET("/reviews/operators", o.ListOperatorsToReview())
 		authRouter.PATCH("/reviews/packages/:packageID", o.ApproveDeclineTourPackage())
 		authRouter.PATCH("/reviews/tour_guides/:tourGuideID", o.ApproveDeclineTourGuide())
+		authRouter.PATCH("/reviews/operators/:operatorID", o.ApproveDeclineOperator())
 
 		// review
 		// listReview

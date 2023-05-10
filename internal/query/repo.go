@@ -8,8 +8,12 @@ import (
 
 type Repo interface {
 	ListOperators(page, limit int64, nameParams string) (*model.ListResult, error)
+	UpdateOperator(operator_id string, operatorUpdate *model.Operator) (*model.Operator, error)
 	ListDashBoardOperators() ([]model.DashBoardOperator, error)
 	VerifyUser(email string) (primitive.M, error)
+	ApproveDeclineOperator(guide *model.Operator) (string, error)
+	GetOperator(ID string) (*model.Operator, error)
+	ListReviewingOperators(map[string]interface{}) (*model.ListResult, error)
 
 	// tours
 	// InsertPackage(tour *model.Tour) (bool, error)

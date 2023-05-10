@@ -93,12 +93,12 @@ func (op *AdminDB) ListTourGuides(requestData map[string]interface{}) (*model.Li
 	dataCollection := TourGuideData(op.DB, "tour_guide")
 
 	cur, err := dataCollection.Find(ctx, filter)
-	defer cur.Close(context.TODO())
 
 	if err != nil {
 		op.App.ErrorLogger.Fatal(err)
 		return nil, err
 	}
+	defer cur.Close(context.TODO())
 
 	var tourGuideList []*model.TourGuide
 
