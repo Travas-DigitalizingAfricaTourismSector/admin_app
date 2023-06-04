@@ -7,6 +7,7 @@ import (
 	"travas_admin/model"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (td *AdminDB) FindAllTourists(page, limit int64, name string) (*model.ListResult, error) {
@@ -17,13 +18,22 @@ func (td *AdminDB) FindAllTourists(page, limit int64, name string) (*model.ListR
 	countChannel := make(chan int64)
 
 	var filter interface{}
-	if name != "" {
+	if name == "" {
 		filter = bson.M{}
 
 	} else {
+		// regexPattern := fmt.Sprintf("^.*%s.*$", name)
+		regexPattern := fmt.Sprintf("(?i).*%s.*", name)
 
-		filter = bson.M{}
+		regexFilter := primitive.Regex{Pattern: regexPattern, Options: ""}
+
+		firstNameFilter := bson.M{"first_name": bson.M{"$regex": regexFilter}}
+		lastNameFilter := bson.M{"last_name": bson.M{"$regex": regexFilter}}
+
+		filter = bson.M{"$or": []bson.M{firstNameFilter, lastNameFilter}}
+
 	}
+
 	go func() {
 		count, err := dataCollection.CountDocuments(context.TODO(), filter)
 		if err != nil {

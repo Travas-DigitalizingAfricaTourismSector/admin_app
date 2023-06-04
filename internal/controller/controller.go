@@ -37,7 +37,6 @@ func NewAdmin(app *config.Tools, db *mongo.Client) *Admin {
 
 func (op *Admin) ListOperators() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		nameParams := ctx.Query("name")
 		page, _ := strconv.ParseInt(ctx.Query("page"), 10, 64)
 		limit, _ := strconv.ParseInt(ctx.Query("limit"), 10, 64)
@@ -45,7 +44,7 @@ func (op *Admin) ListOperators() gin.HandlerFunc {
 		if page == 0 {
 			page = 1
 		}
-		if limit <= 0 {
+		if limit == 0 {
 			limit = 50
 		}
 
@@ -58,6 +57,39 @@ func (op *Admin) ListOperators() gin.HandlerFunc {
 		ctx.JSONP(http.StatusOK, gin.H{"data": list})
 	}
 }
+
+// func (op *Admin) SearchOperators() gin.HandlerFunc {
+// 	return func(ctx *gin.Context) {
+
+// 		nameParams := ctx.Query("name")
+
+// 		regexPattern := fmt.Sprintf("^.*%s.*$", enteredText)
+
+// 		// Compile the regex pattern
+// 		regex, err := regexp.Compile(regexPattern)
+// 		if err != nil {
+// 			fmt.Println("Invalid regex pattern:", err)
+// 			return
+// 		}
+// 		page, _ := strconv.ParseInt(ctx.Query("page"), 10, 64)
+// 		limit, _ := strconv.ParseInt(ctx.Query("limit"), 10, 64)
+
+// 		if page == 0 {
+// 			page = 1
+// 		}
+// 		if limit <= 0 {
+// 			limit = 50
+// 		}
+
+// 		list, err := op.DB.ListOperators(page, limit, nameParams)
+// 		if err != nil {
+// 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+// 			return
+
+// 		}
+// 		ctx.JSONP(http.StatusOK, gin.H{"data": list})
+// 	}
+// }
 
 func (op *Admin) ProcessLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -148,8 +180,41 @@ func (op *Admin) ProcessLogin() gin.HandlerFunc {
 	}
 }
 
+func (op *Admin) ProcessLogOut() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// ... existing code ...
+
+		// Check if the request is a logout request
+		// logout := ctx.Request.Form.Get("logout")
+		// if logout == "true" {
+		// Clear the session data
+		cookieData := sessions.Default(ctx)
+		cookieData.Delete("info")
+		// cookieData.Delete("token")
+		if err := cookieData.Save(); err != nil {
+			log.Println("error from the session storage")
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+		}
+
+		// Redirect the user to the login page or any other relevant page
+		// ctx.Redirect(http.StatusSeeOther, "/login")
+
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "Logged out successfully.",
+		})
+	}
+}
+
 func (op *Admin) ProcessReviews() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		cookieData := sessions.Default(ctx)
+		userInfo, ok := cookieData.Get("info").(model.UserInfo)
+
+		if !ok {
+			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
+		}
+		fmt.Println("userInfo, ok: ", userInfo, ok)
 
 		response, err := op.DB.GetReviews()
 		if err != nil {

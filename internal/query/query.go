@@ -148,12 +148,18 @@ func (op *AdminDB) ListOperators(page, limit int64, name string) (*model.ListRes
 	dataCollection := OperatorData(op.DB, "operators")
 
 	var filter interface{}
-	if name != "" {
+	if name == "" {
 		filter = bson.M{}
 
 	} else {
 
-		filter = bson.M{}
+		// regexPattern := fmt.Sprintf("^.*%s.*$", name)
+		regexPattern := fmt.Sprintf("(?i).*%s.*", name)
+
+		regexFilter := primitive.Regex{Pattern: regexPattern, Options: ""}
+
+		filter = bson.M{"full_name": bson.M{"$regex": regexFilter}}
+
 	}
 
 	countChannel := make(chan int64)

@@ -23,8 +23,9 @@ func Routes(r *gin.Engine, o controller.Admin) {
 	// router.POST("/register", o.ProcessRegister())
 	// router.GET("/login", o.LoginPage())
 	router.POST("/login", o.ProcessLogin())
+	router.GET("/logout", o.ProcessLogOut())
 	authRouter := r.Group("/admin")
-	// authRouter.Use(Authorization())
+	authRouter.Use(Authorization())
 
 	{
 
