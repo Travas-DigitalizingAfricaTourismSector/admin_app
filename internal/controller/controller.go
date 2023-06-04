@@ -58,39 +58,6 @@ func (op *Admin) ListOperators() gin.HandlerFunc {
 	}
 }
 
-// func (op *Admin) SearchOperators() gin.HandlerFunc {
-// 	return func(ctx *gin.Context) {
-
-// 		nameParams := ctx.Query("name")
-
-// 		regexPattern := fmt.Sprintf("^.*%s.*$", enteredText)
-
-// 		// Compile the regex pattern
-// 		regex, err := regexp.Compile(regexPattern)
-// 		if err != nil {
-// 			fmt.Println("Invalid regex pattern:", err)
-// 			return
-// 		}
-// 		page, _ := strconv.ParseInt(ctx.Query("page"), 10, 64)
-// 		limit, _ := strconv.ParseInt(ctx.Query("limit"), 10, 64)
-
-// 		if page == 0 {
-// 			page = 1
-// 		}
-// 		if limit <= 0 {
-// 			limit = 50
-// 		}
-
-// 		list, err := op.DB.ListOperators(page, limit, nameParams)
-// 		if err != nil {
-// 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
-// 			return
-
-// 		}
-// 		ctx.JSONP(http.StatusOK, gin.H{"data": list})
-// 	}
-// }
-
 func (op *Admin) ProcessLogin() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		if err := ctx.Request.ParseForm(); err != nil {
@@ -182,23 +149,15 @@ func (op *Admin) ProcessLogin() gin.HandlerFunc {
 
 func (op *Admin) ProcessLogOut() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		// ... existing code ...
 
-		// Check if the request is a logout request
-		// logout := ctx.Request.Form.Get("logout")
-		// if logout == "true" {
-		// Clear the session data
 		cookieData := sessions.Default(ctx)
 		cookieData.Delete("info")
-		// cookieData.Delete("token")
+
 		if err := cookieData.Save(); err != nil {
 			log.Println("error from the session storage")
 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
 			return
 		}
-
-		// Redirect the user to the login page or any other relevant page
-		// ctx.Redirect(http.StatusSeeOther, "/login")
 
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "Logged out successfully.",
@@ -234,13 +193,13 @@ func (op *Admin) ApproveDeclineOperator() gin.HandlerFunc {
 		if !ok {
 			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
 		}
-		fmt.Println("userInfo, ok: ", userInfo, ok)
 
 		operatorID := ctx.Param("operatorID")
 
 		var input model.Operator
 		if err := ctx.BindJSON(&input); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error bindingJson %v", err)})
 			return
 		}
 
@@ -249,13 +208,13 @@ func (op *Admin) ApproveDeclineOperator() gin.HandlerFunc {
 			return
 		}
 
-		guide, err := op.DB.GetOperator(operatorID)
+		operatorFound, err := op.DB.GetOperator(operatorID)
 		if err != nil {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error finding operator: %v", err)})
 			return
 		}
 
-		if guide.IsApproved {
+		if operatorFound.IsApproved {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "operator already approved."})
 			return
 		}
@@ -271,6 +230,7 @@ func (op *Admin) ApproveDeclineOperator() gin.HandlerFunc {
 
 		resp, err := op.DB.ApproveDeclineOperator(data)
 		if err != nil {
+
 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
 			return
 
@@ -326,5 +286,36 @@ func (op *Admin) ListOperatorsToReview() gin.HandlerFunc {
 
 		}
 		ctx.JSONP(http.StatusOK, gin.H{"TourOperators": list})
+	}
+}
+
+func (op *Admin) ListDashBoardOperators() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		reviewFilter := map[string]interface{}{
+			"isApproved":    false,
+			"declineReason": "",
+		}
+
+		list, err := op.DB.ListReviewingOperators(reviewFilter)
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"TourOperators": list})
+	}
+}
+
+func (op *Admin) FindAllDashboardOperators() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		list, err := op.DB.ListDashBoardOperators()
+		if err != nil {
+			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
+			return
+
+		}
+		ctx.JSONP(http.StatusOK, gin.H{"operators": list, "total": len(list)})
 	}
 }

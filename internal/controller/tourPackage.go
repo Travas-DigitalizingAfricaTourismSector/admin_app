@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (op *Admin) ListToursPackages() gin.HandlerFunc {
@@ -43,8 +42,8 @@ func (op *Admin) SumTourPackages() gin.HandlerFunc {
 
 func (op *Admin) ListOperatorPackages() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		operatorID := ctx.Param("operatorID")
+		fmt.Println("GOT HERE", "operatorID", operatorID)
 		list, err := op.DB.ListOperatorPackages(operatorID)
 		if err != nil {
 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
@@ -78,7 +77,6 @@ func (op *Admin) ApproveDeclineTourPackage() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
 		cookieData := sessions.Default(ctx)
-		fmt.Println("cookieData: ", cookieData)
 		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
 		if !ok {
@@ -89,7 +87,7 @@ func (op *Admin) ApproveDeclineTourPackage() gin.HandlerFunc {
 
 		var input model.Tour
 		if err := ctx.BindJSON(&input); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error bindingJson %v", err)})
 			return
 		}
 
@@ -97,8 +95,6 @@ func (op *Admin) ApproveDeclineTourPackage() gin.HandlerFunc {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": "DeclineReason is required but empty."})
 			return
 		}
-
-		id, _ := primitive.ObjectIDFromHex(packageID)
 
 		tourPackage, err := op.DB.GetTour(packageID)
 		if err != nil {
@@ -112,7 +108,7 @@ func (op *Admin) ApproveDeclineTourPackage() gin.HandlerFunc {
 		}
 
 		data := &model.Tour{
-			ID:            id,
+			ID:            tourPackage.ID,
 			IsApproved:    input.IsApproved,
 			DeclineReason: input.DeclineReason,
 			ApprovedBy:    userInfo.Email,

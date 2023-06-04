@@ -73,7 +73,8 @@ func (op *AdminDB) ListOperatorPackages(operatorID string) (*model.ListResult, e
 	ctx, cancel := context.WithTimeout(context.TODO(), 100*time.Second)
 	defer cancel()
 
-	filter := bson.D{{Key: "operator_id", Value: operatorID}}
+	opertor, _ := primitive.ObjectIDFromHex(operatorID)
+	filter := bson.D{{Key: "operator_id", Value: opertor}}
 
 	dataCollection := TourData(op.DB, "tours")
 
@@ -149,7 +150,8 @@ func (op *AdminDB) GetTour(tourID string) (*model.Tour, error) {
 
 	dataCollection := TourData(op.DB, "tours")
 
-	filter := bson.M{"_id": tourID}
+	tourHex, _ := primitive.ObjectIDFromHex(tourID)
+	filter := bson.M{"_id": tourHex}
 
 	err := dataCollection.FindOne(ctx, filter).Decode(&tour)
 	if err != nil {

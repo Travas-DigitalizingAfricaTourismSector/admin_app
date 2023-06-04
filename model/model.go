@@ -33,6 +33,7 @@ type DashBoardOperator struct {
 	ID          primitive.ObjectID `bson:"_id" json:"_id"`
 	CompanyName string             `bson:"company_name,omitempty"`
 	Email       string             `bson:"email" Usage:"required,alphanumeric" json:"email,omitempty"`
+	FullName    string             `bson:"full_name,omitempty"`
 }
 
 type DashBoardTourist struct {

@@ -340,7 +340,8 @@ func (op *AdminDB) GetOperator(operatorID string) (*model.Operator, error) {
 
 	dataCollection := OperatorData(op.DB, "operators")
 
-	filter := bson.M{"_id": operatorID}
+	operatorData, _ := primitive.ObjectIDFromHex(operatorID)
+	filter := bson.M{"_id": operatorData}
 
 	err := dataCollection.FindOne(ctx, filter).Decode(&operator)
 	if err != nil {

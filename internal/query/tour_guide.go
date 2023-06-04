@@ -121,7 +121,9 @@ func (op *AdminDB) ListTourGuidesByOperator(operatorID string) (*model.ListResul
 
 	dataCollection := TourGuideData(op.DB, "tour_guide")
 
-	filter := bson.D{{Key: "operator_id", Value: operatorID}}
+	operatorHex, _ := primitive.ObjectIDFromHex(operatorID)
+
+	filter := bson.D{{Key: "operator_id", Value: operatorHex}}
 
 	cur, err := dataCollection.Find(ctx, filter)
 	defer cur.Close(context.TODO())

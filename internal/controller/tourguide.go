@@ -90,7 +90,6 @@ func (op *Admin) ListTourGuides() gin.HandlerFunc {
 		//	Todo -> make enquire from the frontend dev before coding this up
 		// find the right selected guide and add that to the tour packages as well
 		cookieData := sessions.Default(ctx)
-		fmt.Println("cookieData: ", cookieData)
 		userInfo, ok := cookieData.Get("info").(model.UserInfo)
 
 		if !ok {
@@ -149,13 +148,12 @@ func (op *Admin) ApproveDeclineTourGuide() gin.HandlerFunc {
 		if !ok {
 			_ = ctx.AbortWithError(http.StatusNotFound, errors.New("cannot find admin id"))
 		}
-		fmt.Println("userInfo, ok: ", userInfo, ok)
 
 		tourID := ctx.Param("tourGuideID")
 
 		var input model.TourGuide
 		if err := ctx.BindJSON(&input); err != nil {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": fmt.Errorf("error bindingJson %v", err)})
 			return
 		}
 

@@ -36,28 +36,22 @@ func Routes(r *gin.Engine, o controller.Admin) {
 		// APPROVE TOUR GUIDE
 
 		// dasahboard lists
-		// authRouter.GET("/dashboard/operators", o.ListDashBoardOperators())
+		authRouter.GET("/dashboard/operators", o.FindAllDashboardOperators())
 		authRouter.GET("/dashboard/tourists", o.FindAllDashboardTourists())
 
 		// operators
 		authRouter.GET("/operators", o.ListOperators())
-
 		// packages
 		authRouter.GET("/packages", o.ListToursPackages())
 		authRouter.GET("/packages/:operatorID", o.ListOperatorPackages())
 
 		// guides
 		authRouter.GET("/guides", o.ListTourGuides())
-		authRouter.GET("/guide/:operatorID", o.ListOperatorTourGuides())
+		authRouter.GET("/guides/:operatorID", o.ListOperatorTourGuides())
 
 		// tour
 		authRouter.GET("/tourists", o.ListTourists())
 
-		// sums
-		// tourPackages
-		// bookings
-		// requestedTours
-		// bucketList
 		authRouter.GET("/sum_packages", o.SumTourPackages())
 		authRouter.GET("/sum_bookings", o.GetBookingsSum())
 		authRouter.GET("/sum_requested_tours", o.GetRequestedTourSum())
@@ -69,11 +63,6 @@ func Routes(r *gin.Engine, o controller.Admin) {
 		authRouter.PATCH("/reviews/packages/:packageID", o.ApproveDeclineTourPackage())
 		authRouter.PATCH("/reviews/tour_guides/:tourGuideID", o.ApproveDeclineTourGuide())
 		authRouter.PATCH("/reviews/operators/:operatorID", o.ApproveDeclineOperator())
-
-		// review
-		// listReview
-		// listTourPacakages to review
-		// listTourGuides to review
 
 	}
 }
