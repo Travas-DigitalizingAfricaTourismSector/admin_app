@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+
 	"travas_admin/model"
 
 	"travas_admin/internal/config"
@@ -34,6 +35,12 @@ func NewAdmin(app *config.Tools, db *mongo.Client) *Admin {
 
 // ProcessLogin : this method will help to parse, verify, and as well as authenticate the user
 // login details, and it also helps to generate jwt token for restricted routers
+
+func (op *Admin) Home() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{})
+	}
+}
 
 func (op *Admin) ListOperators() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
@@ -107,7 +114,6 @@ func (op *Admin) ProcessLogin() gin.HandlerFunc {
 				// generate the jwt token
 				// t1, t2, err := token.Generate(email, id)
 				t1, _, err := token.Generate(email, id)
-
 				if err != nil {
 					_ = ctx.AbortWithError(http.StatusInternalServerError, fmt.Errorf("token no generated : %v ", err))
 				}
@@ -149,7 +155,6 @@ func (op *Admin) ProcessLogin() gin.HandlerFunc {
 
 func (op *Admin) ProcessLogOut() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		cookieData := sessions.Default(ctx)
 		cookieData.Delete("info")
 
@@ -273,7 +278,6 @@ func (op *Admin) VerifyDocument() gin.HandlerFunc {
 
 func (op *Admin) ListOperatorsToReview() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		reviewFilter := map[string]interface{}{
 			"isApproved":    false,
 			"declineReason": "",
@@ -291,7 +295,6 @@ func (op *Admin) ListOperatorsToReview() gin.HandlerFunc {
 
 func (op *Admin) ListDashBoardOperators() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		reviewFilter := map[string]interface{}{
 			"isApproved":    false,
 			"declineReason": "",
@@ -309,7 +312,6 @@ func (op *Admin) ListDashBoardOperators() gin.HandlerFunc {
 
 func (op *Admin) FindAllDashboardOperators() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
 		list, err := op.DB.ListDashBoardOperators()
 		if err != nil {
 			_ = ctx.AbortWithError(http.StatusInternalServerError, gin.Error{Err: err})
