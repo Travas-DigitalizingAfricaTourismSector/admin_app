@@ -18,6 +18,7 @@ func Routes(r *gin.Engine, o controller.Admin) {
 	cookieData := cookie.NewStore([]byte("travas"))
 	router.Use(sessions.Sessions("session", cookieData))
 
+	router.GET("/",o.Home())
 	router.POST("/login", o.ProcessLogin())
 	router.GET("/logout", o.ProcessLogOut())
 	authRouter := r.Group("/admin")
