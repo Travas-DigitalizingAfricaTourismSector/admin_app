@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/gob"
-	"fmt"
+	_ "fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -16,7 +16,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
+	_"github.com/joho/godotenv"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -32,12 +32,12 @@ func main() {
 	gob.Register(model.Tour{})
 	gob.Register(model.UserInfo{})
 	gob.Register(primitive.ObjectID{})
-	err := godotenv.Load()
+	// err := godotenv.Load()
 
-	if err != nil {
-		fmt.Printf("cannot load up the env file : %v \n", err)
-		app.ErrorLogger.Fatalf("cannot load up the env file : %v", err)
-	}
+	// if err != nil {
+	// 	fmt.Printf("cannot load up the env file : %v \n", err)
+	// 	app.ErrorLogger.Fatalf("cannot load up the env file : %v", err)
+	// }
 
 	validate = validator.New()
 	ErrorLogger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
@@ -64,8 +64,7 @@ func main() {
 
 	router := gin.New()
 
-	err = router.SetTrustedProxies([]string{"127.0.0.1"})
-
+	err := router.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
 		app.ErrorLogger.Fatalf("untrusted proxy address : %v", err)
 	}
