@@ -23,10 +23,3 @@ RUN CGO_ENABLED=0 go build -o travasAdmin ./cmd/web
 RUN chmod +x /app/travasAdmin
 
 CMD [ "/app/travasAdmin" ]
-# build a tiny docker image
-# FROM alpine:latest
-# RUN mkdir /app
-
-# COPY travasAdmin /app
-
-# CMD [ "/app/travasAdmin" ]
